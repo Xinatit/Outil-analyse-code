@@ -1,0 +1,146 @@
+Sur R23 :
+
+Syslog :
+logging host 192.168.3.1
+
+Activer les zones :
+zone security INSIDE
+zone security OUTSIDE
+zone security DMZ
+
+Mettre les interfaces dans les zones :
+zone-member security INSIDE
+zone-member security OUTSIDE
+zone-member security DMZ
+
+Créer des zones pair :
+zone-pair security OUTSIDE-TO-DMZ source OUTSIDE destination DMZ
+zone-pair security INSIDE-TO-OUTSIDE source INSIDE destination OUTSIDE
+zone-pair security INSIDE-TO-SELF source INSIDE destination self
+zone-pair security INSIDE-TO-DMZ source INSIDE destination DMZ
+
+
+1)
+Classe map :
+access-list 101 permit tcp any 192.168.3.1 0.0.0.255
+
+Class-map type inspect match-all HTTP-CMAP
+match protocol http
+match access-group 101
+
+
+
+Policy map :
+Policy-map type inspect OUTSIDE-TO-DMZ-PMAP
+class type inspect HTTP-CMAP
+inspect
+
+
+zone-pair security OUTSIDE-TO-DMZ source OUTSIDE destination DMZ
+service-policy type inspect OUTSIDE-TO-DMZ-PMAP
+
+
+2)
+Classe map :
+ip access-list extended ACL-10-FIRST
+permit ICMP 192.168.2.1 0.0.0.7 any
+permit ICMP 192.168.2.8 0.0.0.0 any
+permit ICMP 192.168.2.9 0.0.0.0 any
+permit ICMP 192.168.2.10 0.0.0.0 any
+
+Class-map type inspect match-all HTTP-CMAP2
+match protocol http
+
+Class-map type inspect match-all ICMP-CMAP
+match protocol icmp
+match access-group name ACL-10-FIRST
+
+
+
+Policy map :
+Policy-map type inspect INSIDE-TO-OUTSIDE-PMAP
+class type inspect HTTP-CMAP2
+inspect
+class type inspect ICMP-CMAP
+inspect
+
+
+zone-pair security INSIDE-TO-OUTSIDE source INSIDE destination OUTSIDE
+service-policy type inspect INSIDE-TO-OUTSIDE-PMAP
+
+
+3)
+Classe map :
+ip access-list extended ACL-50-TREE
+permit IP 192.168.2.50 0.0.0.0 any
+permit IP 192.168.2.51 0.0.0.0 any
+permit IP 192.168.2.52 0.0.0.0 any
+permit IP 192.168.2.53 0.0.0.0 any
+
+Class-map type inspect match-all SSH-CMAP
+match protocol ssh
+match access-group name ACL-50-TREE
+Class-map type inspect match-all SSH-OTHER-CMAP
+match protocol ssh
+
+
+
+Policy map :
+Policy-map type inspect INSIDE-TO-SELF-PMAP
+class type inspect SSH-CMAP
+inspect
+Class type inspect SSH-OTHER-CMAP
+drop
+
+
+
+zone-pair security INSIDE-TO-SELF source INSIDE destination self
+service-policy type inspect INSIDE-TO-SELF-PMAP
+
+
+4)
+Classe map :
+ip access-list extended ACL-20-FIRST
+permit IP 192.168.2.1 0.0.0.15 any
+permit IP 192.168.2.16 0.0.0.0 any
+permit IP 192.168.2.17 0.0.0.0 any
+permit IP 192.168.2.18 0.0.0.0 any
+permit IP 192.168.2.19 0.0.0.0 any
+permit IP 192.168.2.20 0.0.0.0 any
+
+Class-map type inspect match-all ICMP-CMAP4
+match protocol icmp
+match access-group name ACL-20-FIRST
+
+Class-map type inspect match-all SSH-CMAP4
+match protocol ssh
+match access-group name ACL-20-FIRST
+
+
+
+Policy map :
+Policy-map type inspect INSIDE-TO-DMZ-PMAP
+class type inspect SSH-CMAP4
+inspect
+class type inspect ICMP-CMAP4
+inspect
+
+
+zone-pair security INSIDE-TO-DMZ source INSIDE destination DMZ
+service-policy type inspect INSIDE-TO-DMZ-PMAP
+
+---------------------
+
+SSH :
+ip domain-name TandTIndustries
+crypto key generate rsa
+2048
+
+username cisco privilege 15 password cisco1
+line vty 0 4
+transport input ssh
+login local
+ip ssh version 2
+
+pour se connecter :
+ssh -l <username> <ip>
