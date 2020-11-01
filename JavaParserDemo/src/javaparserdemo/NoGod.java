@@ -16,17 +16,17 @@ public class NoGod {
     private int Poutrelle;
     private int Lanterne;
     
-    public int BuilldSolidCar ()
+    public int buildSolidCar()
     {
         return Voiture + Rail + Poutrelle;
     }
     
-    public int BuilldSolidLantern ()
+    public int buildSolidLantern()
     {
         return Lanterne + Poutrelle;
     }
     
-    public int getAge ()
+    public int getAge()
     {
         return Age;
     }
